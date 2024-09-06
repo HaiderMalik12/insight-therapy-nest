@@ -5,10 +5,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateUserDTO } from './dtos/create-user.dto';
+import { CreateUserDTO } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma.service';
 import { PasswordService } from 'src/common/password/password.service';
-import { LoginUserDTO } from './dtos/login-user.dto';
+import { LoginUserDTO } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
