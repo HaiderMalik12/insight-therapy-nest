@@ -10,6 +10,7 @@ import { PrismaService } from 'src/prisma.service';
 import { PasswordService } from 'src/common/password/password.service';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { UpdateUserDTO } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -71,5 +72,29 @@ export class UsersService {
     const tokenPayload = { sub: user.id, email: user.email };
     const accessToken = await this.jwtService.signAsync(tokenPayload);
     return { accessToken };
+  }
+  async update(id: number, updateUserDTO: UpdateUserDTO) {
+    const userExist = await this.prisma.user.findFirst({
+      where: { id },
+    });
+    if (!userExist) {
+      throw new NotFoundException('Could not find the user');
+    }
+    if (updateUserDTO.password) {
+      updateUserDTO.password = await this.passwordService.generateHash(
+        updateUserDTO.password,
+        10,
+      );
+    }
+    return await this.prisma.user.update({
+      where: { id },
+      data: updateUserDTO,
+      select: {
+        email: true,
+        firstName: true,
+        lastName: true,
+        id: true,
+      },
+    });
   }
 }

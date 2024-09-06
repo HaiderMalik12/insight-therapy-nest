@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   Put,
   Request,
@@ -36,12 +38,9 @@ export class UsersController {
   async update(
     @Body()
     updateUserDTO: UpdateUserDTO,
+    @Param('id', ParseIntPipe) id: number,
   ) {
-    return updateUserDTO;
-    // updateUserDTO: UpdateUserDTO, // @Body()
-    // A user can update their email
-    // A user can update their password
-    // A user can update their firstName, lastName
+    return await this.userService.update(id, updateUserDTO);
   }
 
   @UseGuards(AuthGuard)
