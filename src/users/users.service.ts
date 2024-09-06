@@ -53,48 +53,70 @@ export class UsersService {
     }
   }
   async login(payload: LoginUserDTO): Promise<{ accessToken: string }> {
-    const user = await this.prisma.user.findFirst({
-      where: { email: payload.email },
-    });
-    if (!user) {
-      throw new NotFoundException('Could not find user', {
-        cause: new Error(),
-        description: 'There is no user in our system',
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { email: payload.email },
       });
+      if (!user) {
+        throw new NotFoundException('Could not find user', {
+          cause: new Error(),
+          description: 'There is no user in our system',
+        });
+      }
+      const passwordMatched = await this.passwordService.decryptPassword(
+        payload.password,
+        user.password,
+      );
+      if (!passwordMatched) {
+        throw new UnauthorizedException();
+      }
+      const tokenPayload = { sub: user.id, email: user.email };
+      const accessToken = await this.jwtService.signAsync(tokenPayload);
+      return { accessToken };
+    } catch (error) {
+      console.error('Error while login user', error.message);
+      throw new InternalServerErrorException();
     }
-    const passwordMatched = await this.passwordService.decryptPassword(
-      payload.password,
-      user.password,
-    );
-    if (!passwordMatched) {
-      throw new UnauthorizedException();
-    }
-    const tokenPayload = { sub: user.id, email: user.email };
-    const accessToken = await this.jwtService.signAsync(tokenPayload);
-    return { accessToken };
   }
   async update(id: number, updateUserDTO: UpdateUserDTO) {
-    const userExist = await this.prisma.user.findFirst({
-      where: { id },
-    });
-    if (!userExist) {
-      throw new NotFoundException('Could not find the user');
+    try {
+      const userExist = await this.prisma.user.findFirst({
+        where: { id },
+      });
+      if (!userExist) {
+        throw new NotFoundException('Could not find the user');
+      }
+      if (updateUserDTO.password) {
+        updateUserDTO.password = await this.passwordService.generateHash(
+          updateUserDTO.password,
+          10,
+        );
+      }
+      return await this.prisma.user.update({
+        where: { id },
+        data: updateUserDTO,
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+          id: true,
+        },
+      });
+    } catch (error) {
+      console.error(`Error while updating user ${error.message}`);
+      throw new InternalServerErrorException();
     }
-    if (updateUserDTO.password) {
-      updateUserDTO.password = await this.passwordService.generateHash(
-        updateUserDTO.password,
-        10,
-      );
+  }
+
+  async delete(id: number) {
+    try {
+      return await this.prisma.user.delete({
+        where: { id },
+        select: { id: true, email: true },
+      });
+    } catch (error) {
+      console.error(`Error while deleting user ${error.message}`);
+      throw new InternalServerErrorException();
     }
-    return await this.prisma.user.update({
-      where: { id },
-      data: updateUserDTO,
-      select: {
-        email: true,
-        firstName: true,
-        lastName: true,
-        id: true,
-      },
-    });
   }
 }

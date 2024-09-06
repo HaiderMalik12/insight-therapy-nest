@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -41,6 +42,10 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return await this.userService.update(id, updateUserDTO);
+  }
+  @Delete('/:id')
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return await this.userService.delete(id);
   }
 
   @UseGuards(AuthGuard)
