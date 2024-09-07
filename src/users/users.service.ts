@@ -80,11 +80,20 @@ export class UsersService {
   }
   async update(id: number, updateUserDTO: UpdateUserDTO) {
     try {
-      const userExist = await this.prisma.user.findFirst({
+      const userExist = await this.prisma.user.findUnique({
         where: { id },
       });
       if (!userExist) {
         throw new NotFoundException('Could not find the user');
+      }
+
+      if (updateUserDTO.email) {
+        const alreadyCreatedUser = await this.prisma.user.findUnique({
+          where: { email: updateUserDTO.email },
+        });
+        if (alreadyCreatedUser) {
+          throw new Error('User already created with this email');
+        }
       }
       if (updateUserDTO.password) {
         updateUserDTO.password = await this.passwordService.generateHash(
@@ -104,7 +113,7 @@ export class UsersService {
       });
     } catch (error) {
       console.error(`Error while updating user ${error.message}`);
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException(error.message);
     }
   }
 
