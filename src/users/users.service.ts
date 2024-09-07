@@ -45,17 +45,10 @@ export class UsersService {
         data: creatUserDTO,
         select: { email: true, id: true },
       });
-
-      await this.prisma.log.create({
-        data: {
-          action: USER_LOGS.USER_SIGNUP,
-          remarks: 'User created successfully',
-          user: {
-            connect: {
-              id: newUser.id,
-            },
-          },
-        },
+      await this.savelogs({
+        userId: newUser.id,
+        remarks: 'User Signup successfully',
+        action: USER_LOGS.USER_SIGNUP,
       });
       return newUser;
     } catch (error) {
@@ -66,6 +59,20 @@ export class UsersService {
       });
     }
   }
+  private async savelogs({ action, remarks, userId }) {
+    await this.prisma.log.create({
+      data: {
+        action,
+        remarks: remarks,
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+      },
+    });
+  }
+
   async login(payload: LoginUserDTO): Promise<{ accessToken: string }> {
     try {
       const user = await this.prisma.user.findFirst({
@@ -86,16 +93,10 @@ export class UsersService {
       }
       const tokenPayload = { sub: user.id, email: user.email };
       const accessToken = await this.jwtService.signAsync(tokenPayload);
-      await this.prisma.log.create({
-        data: {
-          action: USER_LOGS.USER_LOGIN,
-          remarks: 'User logged in successfully',
-          user: {
-            connect: {
-              id: user.id,
-            },
-          },
-        },
+      await this.savelogs({
+        userId: user.id,
+        remarks: 'User LogedIn successfully',
+        action: USER_LOGS.USER_LOGIN,
       });
       return { accessToken };
     } catch (error) {
@@ -137,16 +138,10 @@ export class UsersService {
         },
       });
 
-      await this.prisma.log.create({
-        data: {
-          action: USER_LOGS.USER_UPDATED,
-          remarks: 'User updated successfully',
-          user: {
-            connect: {
-              id: updatedUser.id,
-            },
-          },
-        },
+      await this.savelogs({
+        userId: updatedUser.id,
+        remarks: 'User Updated successfully',
+        action: USER_LOGS.USER_UPDATED,
       });
       return updatedUser;
     } catch (error) {
