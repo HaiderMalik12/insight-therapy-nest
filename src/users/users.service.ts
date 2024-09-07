@@ -11,6 +11,7 @@ import { PasswordService } from 'src/common/password/password.service';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDTO } from './dto/update-user.dto';
+import { USER_LOGS } from './users.constants';
 
 @Injectable()
 export class UsersService {
@@ -40,10 +41,23 @@ export class UsersService {
         10,
       );
       creatUserDTO.password = hash;
-      return await this.prisma.user.create({
+      const newUser = await this.prisma.user.create({
         data: creatUserDTO,
         select: { email: true, id: true },
       });
+
+      await this.prisma.log.create({
+        data: {
+          action: USER_LOGS.USER_SIGNUP,
+          remarks: 'User created successfully',
+          user: {
+            connect: {
+              id: newUser.id,
+            },
+          },
+        },
+      });
+      return newUser;
     } catch (error) {
       console.error(`Error while creating new user`, error.message);
       throw new InternalServerErrorException('Signup user failed', {
@@ -72,6 +86,17 @@ export class UsersService {
       }
       const tokenPayload = { sub: user.id, email: user.email };
       const accessToken = await this.jwtService.signAsync(tokenPayload);
+      await this.prisma.log.create({
+        data: {
+          action: USER_LOGS.USER_LOGIN,
+          remarks: 'User logged in successfully',
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
+        },
+      });
       return { accessToken };
     } catch (error) {
       console.error('Error while login user', error.message);
@@ -101,7 +126,7 @@ export class UsersService {
           10,
         );
       }
-      return await this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { id },
         data: updateUserDTO,
         select: {
@@ -111,6 +136,19 @@ export class UsersService {
           id: true,
         },
       });
+
+      await this.prisma.log.create({
+        data: {
+          action: USER_LOGS.USER_UPDATED,
+          remarks: 'User updated successfully',
+          user: {
+            connect: {
+              id: updatedUser.id,
+            },
+          },
+        },
+      });
+      return updatedUser;
     } catch (error) {
       console.error(`Error while updating user ${error.message}`);
       throw new InternalServerErrorException(error.message);
@@ -119,10 +157,20 @@ export class UsersService {
 
   async delete(id: number) {
     try {
-      return await this.prisma.user.delete({
+      const user = await this.prisma.user.findUnique({
         where: { id },
         select: { id: true, email: true },
       });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const results = await this.prisma.user.delete({
+        where: { id },
+        select: { id: true, email: true },
+      });
+
+      return results;
     } catch (error) {
       console.error(`Error while deleting user ${error.message}`);
       throw new InternalServerErrorException();

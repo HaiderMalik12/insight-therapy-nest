@@ -20,4 +20,14 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  logs Log[]
+}
+
+model Log { 
+  id        Int      @id @default(autoincrement())
+  action String
+  remarks String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
 }

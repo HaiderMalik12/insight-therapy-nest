@@ -6,6 +6,7 @@ export class CreateUserDTO {
   @IsOptional()
   lastName: string;
   @IsEmail()
+  @IsNotEmpty()
   email: string;
   @IsNotEmpty()
   password: string;
