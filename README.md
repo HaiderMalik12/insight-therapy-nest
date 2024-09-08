@@ -32,10 +32,21 @@
 $ npm install
 ```
 
+## Database Setup
+
+You have to create a new database in PgAdmin with `logs-app` name. Please refactor the `.env.example` to
+`.env` file and add your db configurations
+
+`DATABASE_URL="postgresql://{YOUR_DB_USERNAME}:{YOYR_DB_PASSWORD}@localhost:5432/logs-app?schema=public"`
+
 ## Running the app
 
 ```bash
 # development
+
+# sync models to postgres database tables
+$ npx prisma migrate dev
+
 $ npm run start
 
 # watch mode
@@ -43,6 +54,24 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+## Public Endpoints
+
+```bash
+POST http://localhost:3000/users/signup
+
+POST http://localhost:3000/users/login
+```
+
+## Protected Endpoints
+
+You need to get the access token from the login request and provide the authorization header in the form of `Bearer ${ACCESS_TOKEN}`
+
+```bash
+GET http://localhost:3000/users/profile
+PUT http://localhost:3000/users/:id
+DELETE http://localhost:3000/users/:id
 ```
 
 ## Test
