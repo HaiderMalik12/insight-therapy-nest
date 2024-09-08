@@ -35,6 +35,7 @@ export class UsersController {
     return await this.userService.login(loginUserDTO);
   }
 
+  @UseGuards(AuthGuard)
   @Put('/:id')
   async update(
     @Body()
@@ -43,6 +44,7 @@ export class UsersController {
   ) {
     return await this.userService.update(id, updateUserDTO);
   }
+  @UseGuards(AuthGuard)
   @Delete('/:id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return await this.userService.delete(id);
